@@ -2,9 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Modules\Payroll\Models;
-
-use App\Shared\Models\TenantBaseModel;
+namespace App\Shared\Models;
 
 class PayrollRecord extends TenantBaseModel
 {
@@ -47,3 +45,4 @@ class PayrollRecord extends TenantBaseModel
         ];
     }
 }
+

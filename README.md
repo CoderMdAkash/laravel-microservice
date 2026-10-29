@@ -96,31 +96,31 @@ This project is built from the ground up for **SaaS applications** with strict t
 
 ---
 
-## 🧩 Common Reusable Core Architecture
+## 🧩 Common Reusable Core & Centralized Models Architecture
 
-All common, reusable classes reside in `app/Shared/` so that modules never duplicate boilerplate:
+All common, reusable domain models and infrastructure classes reside centrally in `app/Shared/Models/` so any service, job, or gateway can import and reuse them without cross-module coupling:
 
-| Component | Path | Description |
+| Common Model | File Path | Description |
 |---|---|---|
 | **BaseModel** | `app/Shared/Models/BaseModel.php` | Root abstract Eloquent model with ISO-8601 date serialization, `scopeRecent()`, `scopeActive()`, `scopeSearch()`, and status checks. |
 | **TenantBaseModel** | `app/Shared/Models/TenantBaseModel.php` | Base model for tenant-specific domain entities. Automatically resolves its database connection to the active tenant's database connection. |
 | **Tenant** | `app/Shared/Models/Tenant.php` | Landlord model representing SaaS Tenants (`id`, `name`, `subdomain`, `database_name`, `status`, `plan`). |
-| **BelongsToTenant** | `app/Shared/Traits/BelongsToTenant.php` | Trait providing global tenant query scoping and auto-assignment of `tenant_id` on creation. |
-| **HasStatus** | `app/Shared/Traits/HasStatus.php` | Trait providing `scopeActive()`, `scopeStatus()`, and `isActive()` checks. |
-| **HasUuid** | `app/Shared/Traits/HasUuid.php` | Trait auto-generating UUIDs and providing `scopeWhereUuid()`. |
-| **TenantDatabaseManager** | `app/Shared/Database/TenantDatabaseManager.php` | Dynamically manages, purges, and reconnects tenant database connections at runtime. |
-| **TenantResolutionMiddleware** | `app/Shared/Middleware/TenantResolutionMiddleware.php` | Resolves tenant from headers or subdomains and activates the tenant context. |
-| **TenantContext** | `app/Shared/Support/TenantContext.php` | Singleton retaining the current tenant metadata throughout the HTTP request lifecycle. |
-| **ApiResponse** | `app/Shared/Support/ApiResponse.php` | Standardized JSON API response handler (`success`, `error`, `paginated`). |
-| **DataTransferObject** | `app/Shared/Support/DataTransferObject.php` | Abstract contract for immutable, type-safe DTOs with `JsonSerializable`. |
+| **User** | `app/Shared/Models/User.php` | Central User model with authentication, tenant isolation (`BelongsToTenant`), status, and UUID. |
+| **IdentityUser** | `app/Shared/Models/IdentityUser.php` | Identity module user model inheriting from the central common User. |
+| **AttendanceRecord** | `app/Shared/Models/AttendanceRecord.php` | Central attendance model tracking employee check-ins, check-outs, and work hours. |
+| **PayrollRecord** | `app/Shared/Models/PayrollRecord.php` | Central payroll model tracking basic salary, allowances, deductions, and payment status. |
+| **AccountLedger** | `app/Shared/Models/AccountLedger.php` | Central double-entry accounting ledger model tracking balances, currencies, and account types. |
+| **InventoryItem** | `app/Shared/Models/InventoryItem.php` | Central inventory item model tracking SKUs, warehouse stock, unit prices, and status. |
+| **NotificationLog** | `app/Shared/Models/NotificationLog.php` | Central notification dispatch log model tracking channels (email, sms, webhook) and delivery states. |
 
-All module models inherit from this common foundation:
-- `IdentityUser` extends `Authenticatable` and uses `BelongsToTenant`, `HasStatus`, and dynamic tenant connection resolution.
-- `AttendanceRecord` extends `TenantBaseModel`
-- `PayrollRecord` extends `TenantBaseModel`
-- `AccountLedger` extends `TenantBaseModel`
-- `InventoryItem` extends `TenantBaseModel`
-- `NotificationLog` extends `TenantBaseModel`
+All module models (`app/Modules/*/Models/`) cleanly extend their central common model counterpart:
+- `App\Modules\Identity\Models\IdentityUser` extends `App\Shared\Models\IdentityUser`
+- `App\Modules\Attendance\Models\AttendanceRecord` extends `App\Shared\Models\AttendanceRecord`
+- `App\Modules\Payroll\Models\PayrollRecord` extends `App\Shared\Models\PayrollRecord`
+- `App\Modules\Accounting\Models\AccountLedger` extends `App\Shared\Models\AccountLedger`
+- `App\Modules\Inventory\Models\InventoryItem` extends `App\Shared\Models\InventoryItem`
+- `App\Modules\Notification\Models\NotificationLog` extends `App\Shared\Models\NotificationLog`
+- `App\Models\User` extends `App\Shared\Models\User`
 
 ---
 
@@ -137,47 +137,41 @@ app/
 │   │   └── GatewayService.php               # Service aggregation, dynamic dispatching, schema generator
 │   └── routes.php                           # Gateway route definitions
 │
-├── Modules/                                 # Independent Microservice Modules
+├── Modules/                                 # Independent Microservice Modules (Pure Services)
 │   ├── Identity/                            # Identity & Access Management
 │   │   ├── Controllers/IdentityController.php
 │   │   ├── Services/IdentityService.php
 │   │   ├── DTOs/IdentityDTO.php
-│   │   ├── Models/IdentityUser.php          # Uses Common BelongsToTenant & Dynamic Connection
 │   │   ├── Requests/IdentityIndexRequest.php
 │   │   └── routes.php
 │   ├── Attendance/                          # Attendance & Shift Management
 │   │   ├── Controllers/AttendanceController.php
 │   │   ├── Services/AttendanceService.php
 │   │   ├── DTOs/AttendanceDTO.php
-│   │   ├── Models/AttendanceRecord.php      # Extends Common TenantBaseModel
 │   │   ├── Requests/AttendanceIndexRequest.php
 │   │   └── routes.php
 │   ├── Payroll/                             # Compensation & Payroll Processing
 │   │   ├── Controllers/PayrollController.php
 │   │   ├── Services/PayrollService.php
 │   │   ├── DTOs/PayrollDTO.php
-│   │   ├── Models/PayrollRecord.php         # Extends Common TenantBaseModel
 │   │   ├── Requests/PayrollIndexRequest.php
 │   │   └── routes.php
 │   ├── Accounting/                          # Double-Entry Ledger & Financials
 │   │   ├── Controllers/AccountingController.php
 │   │   ├── Services/AccountingService.php
 │   │   ├── DTOs/AccountingDTO.php
-│   │   ├── Models/AccountLedger.php         # Extends Common TenantBaseModel
 │   │   ├── Requests/AccountingIndexRequest.php
 │   │   └── routes.php
 │   ├── Inventory/                           # Stock & Warehouse Management
 │   │   ├── Controllers/InventoryController.php
 │   │   ├── Services/InventoryService.php
 │   │   ├── DTOs/InventoryDTO.php
-│   │   ├── Models/InventoryItem.php         # Extends Common TenantBaseModel
 │   │   ├── Requests/InventoryIndexRequest.php
 │   │   └── routes.php
 │   └── Notification/                        # Multi-Channel Dispatch & Logs
 │       ├── Controllers/NotificationController.php
 │       ├── Services/NotificationService.php
 │       ├── DTOs/NotificationDTO.php
-│       ├── Models/NotificationLog.php       # Extends Common TenantBaseModel
 │       ├── Requests/NotificationIndexRequest.php
 │       └── routes.php
 │
@@ -190,11 +184,19 @@ app/
 │   │   ├── ModuleException.php              # Domain exception with unified JSON rendering
 │   │   └── TenantNotFoundException.php      # Thrown when tenant cannot be resolved
 │   ├── Middleware/
+│   │   ├── EnsureGatewayAccess.php          # Blocks direct access to service ports (8001-8006)
 │   │   └── TenantResolutionMiddleware.php   # Detects tenant via X-Tenant-ID / Subdomain and sets DB connection
-│   ├── Models/
+│   ├── Models/                              # Centralized Common Models (Single Source of Truth)
 │   │   ├── BaseModel.php                    # Universal Base Eloquent Model
+│   │   ├── TenantBaseModel.php              # Tenant-scoped Base Model with auto DB switching
 │   │   ├── Tenant.php                       # Landlord SaaS Tenant Model
-│   │   └── TenantBaseModel.php              # Tenant-scoped Base Model with auto DB switching
+│   │   ├── User.php                         # Central User Model
+│   │   ├── IdentityUser.php                 # Central Identity User Model
+│   │   ├── AttendanceRecord.php             # Central Attendance Record Model
+│   │   ├── PayrollRecord.php                # Central Payroll Record Model
+│   │   ├── AccountLedger.php                # Central Account Ledger Model
+│   │   ├── InventoryItem.php                # Central Inventory Item Model
+│   │   └── NotificationLog.php              # Central Notification Log Model
 │   ├── Support/
 │   │   ├── ApiResponse.php                  # Standardized response helper (success, error, paginated)
 │   │   ├── DataTransferObject.php           # Abstract DTO contract with JsonSerializable

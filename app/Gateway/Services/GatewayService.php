@@ -298,7 +298,7 @@ class GatewayService
             'modules' => [
                 'Identity' => [
                     'description' => 'User identity, authentication, profile and role administration.',
-                    'model' => 'App\Modules\Identity\Models\IdentityUser',
+                    'model' => 'App\Shared\Models\IdentityUser',
                     'dto' => 'App\Modules\Identity\DTOs\IdentityDTO',
                     'fields' => [
                         'id' => ['type' => 'integer', 'required' => true, 'description' => 'Unique internal identity user ID', 'example' => 1],
@@ -316,7 +316,7 @@ class GatewayService
                 ],
                 'Attendance' => [
                     'description' => 'Employee daily check-in, shift tracking, and working hours calculation.',
-                    'model' => 'App\Modules\Attendance\Models\AttendanceRecord',
+                    'model' => 'App\Shared\Models\AttendanceRecord',
                     'dto' => 'App\Modules\Attendance\DTOs\AttendanceDTO',
                     'fields' => [
                         'id' => ['type' => 'integer', 'required' => true, 'description' => 'Unique attendance record ID', 'example' => 101],
@@ -335,7 +335,7 @@ class GatewayService
                 ],
                 'Payroll' => [
                     'description' => 'Salary computations, gross-to-net breakdown, tax deductions, and payment statuses.',
-                    'model' => 'App\Modules\Payroll\Models\PayrollRecord',
+                    'model' => 'App\Shared\Models\PayrollRecord',
                     'dto' => 'App\Modules\Payroll\DTOs\PayrollDTO',
                     'fields' => [
                         'id' => ['type' => 'integer', 'required' => true, 'description' => 'Unique payroll slip ID', 'example' => 501],
@@ -356,7 +356,7 @@ class GatewayService
                 ],
                 'Accounting' => [
                     'description' => 'General ledger, charts of accounts, cash flow, asset and liability tracking.',
-                    'model' => 'App\Modules\Accounting\Models\AccountLedger',
+                    'model' => 'App\Shared\Models\AccountLedger',
                     'dto' => 'App\Modules\Accounting\DTOs\AccountingDTO',
                     'fields' => [
                         'id' => ['type' => 'integer', 'required' => true, 'description' => 'Unique ledger account ID', 'example' => 1],
@@ -373,7 +373,7 @@ class GatewayService
                 ],
                 'Inventory' => [
                     'description' => 'Product stock control, SKU tracking, warehouse allocation, and availability monitoring.',
-                    'model' => 'App\Modules\Inventory\Models\InventoryItem',
+                    'model' => 'App\Shared\Models\InventoryItem',
                     'dto' => 'App\Modules\Inventory\DTOs\InventoryDTO',
                     'fields' => [
                         'id' => ['type' => 'integer', 'required' => true, 'description' => 'Unique inventory item ID', 'example' => 1],
@@ -392,7 +392,7 @@ class GatewayService
                 ],
                 'Notification' => [
                     'description' => 'Multi-channel messaging dispatches (Email, SMS, Push, Webhooks) and delivery logs.',
-                    'model' => 'App\Modules\Notification\Models\NotificationLog',
+                    'model' => 'App\Shared\Models\NotificationLog',
                     'dto' => 'App\Modules\Notification\DTOs\NotificationDTO',
                     'fields' => [
                         'id' => ['type' => 'integer', 'required' => true, 'description' => 'Unique notification log ID', 'example' => 1],

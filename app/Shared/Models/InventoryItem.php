@@ -2,18 +2,16 @@
 
 declare(strict_types=1);
 
-namespace App\Modules\Accounting\Models;
+namespace App\Shared\Models;
 
-use App\Shared\Models\TenantBaseModel;
-
-class AccountLedger extends TenantBaseModel
+class InventoryItem extends TenantBaseModel
 {
     /**
      * The table associated with the model.
      *
      * @var string
      */
-    protected $table = 'account_ledgers';
+    protected $table = 'inventory_items';
 
     /**
      * The attributes that are mass assignable.
@@ -22,11 +20,11 @@ class AccountLedger extends TenantBaseModel
      */
     protected $fillable = [
         'tenant_id',
-        'account_code',
-        'account_name',
-        'type',
-        'balance',
-        'currency',
+        'sku',
+        'name',
+        'category',
+        'quantity',
+        'unit_price',
         'status',
     ];
 
@@ -38,7 +36,9 @@ class AccountLedger extends TenantBaseModel
     protected function casts(): array
     {
         return [
-            'balance' => 'float',
+            'quantity' => 'integer',
+            'unit_price' => 'float',
         ];
     }
 }
+

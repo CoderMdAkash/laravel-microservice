@@ -2,18 +2,16 @@
 
 declare(strict_types=1);
 
-namespace App\Modules\Attendance\Models;
+namespace App\Shared\Models;
 
-use App\Shared\Models\TenantBaseModel;
-
-class AttendanceRecord extends TenantBaseModel
+class AccountLedger extends TenantBaseModel
 {
     /**
      * The table associated with the model.
      *
      * @var string
      */
-    protected $table = 'attendance_records';
+    protected $table = 'account_ledgers';
 
     /**
      * The attributes that are mass assignable.
@@ -22,12 +20,12 @@ class AttendanceRecord extends TenantBaseModel
      */
     protected $fillable = [
         'tenant_id',
-        'employee_id',
-        'employee_name',
-        'check_in',
-        'check_out',
+        'account_code',
+        'account_name',
+        'type',
+        'balance',
+        'currency',
         'status',
-        'work_hours',
     ];
 
     /**
@@ -38,9 +36,8 @@ class AttendanceRecord extends TenantBaseModel
     protected function casts(): array
     {
         return [
-            'check_in' => 'datetime',
-            'check_out' => 'datetime',
-            'work_hours' => 'float',
+            'balance' => 'float',
         ];
     }
 }
+

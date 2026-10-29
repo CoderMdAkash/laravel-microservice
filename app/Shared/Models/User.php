@@ -2,18 +2,19 @@
 
 declare(strict_types=1);
 
-namespace App\Modules\Identity\Models;
+namespace App\Shared\Models;
 
 use App\Shared\Support\TenantContext;
 use App\Shared\Traits\BelongsToTenant;
 use App\Shared\Traits\HasStatus;
+use App\Shared\Traits\HasUuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class IdentityUser extends Authenticatable
+class User extends Authenticatable
 {
-    use BelongsToTenant, HasFactory, HasStatus, Notifiable;
+    use BelongsToTenant, HasFactory, HasStatus, HasUuid, Notifiable;
 
     /**
      * The table associated with the model.
@@ -29,9 +30,11 @@ class IdentityUser extends Authenticatable
      */
     protected $fillable = [
         'tenant_id',
+        'uuid',
         'name',
         'email',
         'password',
+        'role',
         'status',
     ];
 
@@ -70,3 +73,4 @@ class IdentityUser extends Authenticatable
         return $this->connection ?? config('database.default');
     }
 }
+

@@ -2,13 +2,14 @@
 
 namespace Tests\Feature;
 
-use App\Modules\Accounting\Models\AccountLedger;
-use App\Modules\Attendance\Models\AttendanceRecord;
-use App\Modules\Identity\Models\IdentityUser;
-use App\Modules\Inventory\Models\InventoryItem;
-use App\Modules\Notification\Models\NotificationLog;
-use App\Modules\Payroll\Models\PayrollRecord;
+use App\Shared\Models\AccountLedger;
+use App\Shared\Models\AttendanceRecord;
+use App\Shared\Models\IdentityUser;
+use App\Shared\Models\InventoryItem;
+use App\Shared\Models\NotificationLog;
+use App\Shared\Models\PayrollRecord;
 use App\Shared\Models\TenantBaseModel;
+use App\Shared\Models\User;
 use Tests\TestCase;
 
 class SaaSMultiTenancyTest extends TestCase
@@ -82,7 +83,7 @@ class SaaSMultiTenancyTest extends TestCase
     }
 
     /**
-     * Test that all microservice models extend TenantBaseModel or implement tenant awareness.
+     * Test that all common models extend TenantBaseModel or implement tenant awareness.
      */
     public function test_common_models_inherit_tenant_base_architecture(): void
     {
@@ -92,6 +93,7 @@ class SaaSMultiTenancyTest extends TestCase
         $inventory = new InventoryItem;
         $notification = new NotificationLog;
         $user = new IdentityUser;
+        $commonUser = new User;
 
         $this->assertInstanceOf(TenantBaseModel::class, $attendance);
         $this->assertInstanceOf(TenantBaseModel::class, $payroll);
@@ -99,7 +101,8 @@ class SaaSMultiTenancyTest extends TestCase
         $this->assertInstanceOf(TenantBaseModel::class, $inventory);
         $this->assertInstanceOf(TenantBaseModel::class, $notification);
 
-        // IdentityUser has BelongsToTenant trait & custom dynamic connection
+        // IdentityUser & User have BelongsToTenant trait & custom dynamic connection
         $this->assertTrue(method_exists($user, 'getConnectionName'));
+        $this->assertTrue(method_exists($commonUser, 'getConnectionName'));
     }
 }

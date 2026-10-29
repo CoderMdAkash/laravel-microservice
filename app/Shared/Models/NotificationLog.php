@@ -2,9 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Modules\Notification\Models;
-
-use App\Shared\Models\TenantBaseModel;
+namespace App\Shared\Models;
 
 class NotificationLog extends TenantBaseModel
 {
@@ -42,3 +40,4 @@ class NotificationLog extends TenantBaseModel
         ];
     }
 }
+

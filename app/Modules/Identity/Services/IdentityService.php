@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Identity\Services;
 
 use App\Modules\Identity\DTOs\IdentityDTO;
-use App\Modules\Identity\Models\IdentityUser;
+use App\Shared\Models\IdentityUser;
 use Illuminate\Support\Facades\Schema;
 
 class IdentityService
