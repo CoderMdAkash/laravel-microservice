@@ -45,4 +45,3 @@ class Tenant extends BaseModel
         ];
     }
 }
-

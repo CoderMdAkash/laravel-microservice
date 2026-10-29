@@ -13,6 +13,7 @@ use App\Modules\Payroll\Services\PayrollService;
 use App\Shared\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 
 class GatewayService
 {
@@ -38,12 +39,30 @@ class GatewayService
         $startTime = microtime(true);
 
         $services = [
-            'identity' => $this->identityService->getModuleStatus(),
-            'attendance' => $this->attendanceService->getModuleStatus(),
-            'payroll' => $this->payrollService->getModuleStatus(),
-            'accounting' => $this->accountingService->getModuleStatus(),
-            'inventory' => $this->inventoryService->getModuleStatus(),
-            'notification' => $this->notificationService->getModuleStatus(),
+            'identity' => array_merge($this->identityService->getModuleStatus(), [
+                'port' => config('microservices.services.identity.port', 8001),
+                'url' => config('microservices.services.identity.url', 'http://127.0.0.1:8001'),
+            ]),
+            'attendance' => array_merge($this->attendanceService->getModuleStatus(), [
+                'port' => config('microservices.services.attendance.port', 8002),
+                'url' => config('microservices.services.attendance.url', 'http://127.0.0.1:8002'),
+            ]),
+            'payroll' => array_merge($this->payrollService->getModuleStatus(), [
+                'port' => config('microservices.services.payroll.port', 8003),
+                'url' => config('microservices.services.payroll.url', 'http://127.0.0.1:8003'),
+            ]),
+            'accounting' => array_merge($this->accountingService->getModuleStatus(), [
+                'port' => config('microservices.services.accounting.port', 8004),
+                'url' => config('microservices.services.accounting.url', 'http://127.0.0.1:8004'),
+            ]),
+            'inventory' => array_merge($this->inventoryService->getModuleStatus(), [
+                'port' => config('microservices.services.inventory.port', 8005),
+                'url' => config('microservices.services.inventory.url', 'http://127.0.0.1:8005'),
+            ]),
+            'notification' => array_merge($this->notificationService->getModuleStatus(), [
+                'port' => config('microservices.services.notification.port', 8006),
+                'url' => config('microservices.services.notification.url', 'http://127.0.0.1:8006'),
+            ]),
         ];
 
         $latencyMs = round((microtime(true) - $startTime) * 1000, 2);
@@ -53,6 +72,7 @@ class GatewayService
                 'name' => 'Laravel Microservice API Gateway',
                 'version' => '1.0.0',
                 'status' => 'healthy',
+                'dispatch_mode' => config('microservices.mode', 'internal'),
                 'cluster_latency_ms' => $latencyMs,
                 'total_services' => count($services),
                 'active_services' => count($services),
@@ -113,14 +133,24 @@ class GatewayService
     }
 
     /**
-     * Dynamic Service Dispatcher: routes request to specific microservice.
+     * Dynamic Service Dispatcher: routes request to specific microservice (via internal call or separate HTTP port).
      */
     public function dispatch(string $service, Request $request): JsonResponse
     {
+        $normalizedService = strtolower($service);
+
+        // If HTTP mode is enabled, dispatch over HTTP to separate service port
+        if (config('microservices.mode') === 'http') {
+            $httpResponse = $this->dispatchOverHttp($normalizedService, $request);
+            if ($httpResponse !== null) {
+                return $httpResponse;
+            }
+        }
+
         $startTime = microtime(true);
         $correlationId = (string) $request->header('X-Correlation-ID', '');
 
-        return match (strtolower($service)) {
+        return match ($normalizedService) {
             'identity' => ApiResponse::success(
                 data: [
                     'overview' => $this->identityService->getModuleStatus(),
@@ -218,6 +248,37 @@ class GatewayService
                 ]
             ),
         };
+    }
+
+    /**
+     * Dispatch to microservice over HTTP if running on separate port / container.
+     */
+    protected function dispatchOverHttp(string $service, Request $request): ?JsonResponse
+    {
+        $serviceConfig = config("microservices.services.{$service}");
+        if (! $serviceConfig || empty($serviceConfig['url'])) {
+            return null;
+        }
+
+        $url = rtrim($serviceConfig['url'], '/').'/api/'.$service;
+
+        try {
+            $response = Http::timeout(4.0)
+                ->withHeaders([
+                    'X-Correlation-ID' => (string) $request->header('X-Correlation-ID', ''),
+                    'X-Tenant-ID' => (string) $request->header('X-Tenant-ID', ''),
+                    'Accept' => 'application/json',
+                ])
+                ->get($url, $request->query());
+
+            return response()->json($response->json(), $response->status());
+        } catch (\Throwable $e) {
+            return ApiResponse::error(
+                message: "Failed to connect to {$service} microservice at {$serviceConfig['url']}",
+                statusCode: 503,
+                errors: ['exception' => $e->getMessage()]
+            );
+        }
     }
 
     /**

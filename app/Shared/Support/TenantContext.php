@@ -58,4 +58,3 @@ class TenantContext
         self::$currentTenant = null;
     }
 }
-

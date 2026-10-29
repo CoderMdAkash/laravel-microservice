@@ -24,4 +24,3 @@ abstract class TenantBaseModel extends BaseModel
         return $this->connection ?? config('database.default');
     }
 }
-
