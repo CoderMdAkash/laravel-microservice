@@ -70,8 +70,10 @@ class SaaSMultiTenancyTest extends TestCase
      */
     public function test_module_endpoints_receive_and_echo_tenant_context(): void
     {
-        $response = $this->withHeader('X-Tenant-ID', 'acme')
-            ->getJson('/api/identity');
+        $response = $this->withHeaders([
+            'X-Tenant-ID' => 'acme',
+            'X-Gateway-Secret' => (string) config('microservices.gateway_secret'),
+        ])->getJson('/api/identity');
 
         $response->assertStatus(200)
             ->assertHeader('X-Tenant-ID', 'acme')

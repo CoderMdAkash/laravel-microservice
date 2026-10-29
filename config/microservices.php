@@ -13,7 +13,19 @@ return [
     | - 'http': Dispatches requests to separate service ports / microservice URLs.
     |
     */
-    'mode' => env('MICROSERVICE_GATEWAY_MODE', 'internal'),
+    'mode' => env('MICROSERVICE_GATEWAY_MODE', 'http'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Internal Gateway Security Secret
+    |--------------------------------------------------------------------------
+    |
+    | Prevents direct external access to microservice ports (8001-8006).
+    | Only requests routed through the API Gateway (port 8000) carrying this
+    | secret header will be accepted by individual microservices.
+    |
+    */
+    'gateway_secret' => env('GATEWAY_INTERNAL_SECRET', 'microservice_internal_secret_key_987456321'),
 
     /*
     |--------------------------------------------------------------------------
@@ -56,4 +68,3 @@ return [
         ],
     ],
 ];
-

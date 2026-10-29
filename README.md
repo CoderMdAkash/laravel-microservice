@@ -269,15 +269,68 @@ php artisan migrate
 
 ### Step 6: Start the Application Server
 
-#### Option A: PHP Built-in Server (Recommended for quick testing)
+#### Option A: VS Code One-Click Compound Task (⭐ Recommended for Multi-Port)
+Open VS Code, press **`Ctrl+Shift+B`** (or press `F1` / `Ctrl+Shift+P` -> **Tasks: Run Task** -> **Run All Microservices (Ports 8000-8006)**).
+This immediately launches all 7 microservices in parallel in separate terminal tabs:
+- **Port 8000**: API Gateway (Public Root Entrypoint)
+- **Port 8001**: Identity Microservice
+- **Port 8002**: Attendance Microservice
+- **Port 8003**: Payroll Microservice
+- **Port 8004**: Accounting Microservice
+- **Port 8005**: Inventory Microservice
+- **Port 8006**: Notification Microservice
+
+#### Option B: PowerShell Multi-Window Script
+```powershell
+.\start-services.ps1
+```
+
+#### Option C: PHP Built-in Server (Unified Single Port)
 ```bash
-php artisan serve
+php artisan serve --port=8000
 ```
 The application will be accessible at: `http://127.0.0.1:8000`
 
-#### Option B: Laragon Local Virtual Host
+#### Option D: Laragon Local Virtual Host
 If using Laragon, start Apache & MySQL. Access via:
 `http://laravel-microservice.test`
+
+---
+
+## 🔒 Zero-Trust Security: Gateway-Only Access Protection
+
+In this microservice architecture, **backend microservice ports (8001–8006) cannot be accessed directly by external clients**. Direct requests are rejected with `403 Forbidden`:
+
+```json
+{
+  "success": false,
+  "message": "Direct microservice access denied. All requests must route through the API Gateway.",
+  "errors": {
+    "reason": "Direct port access is blocked for security.",
+    "gateway_entrypoint": "http://127.0.0.1:8000/api/gateway/dispatch/identity",
+    "hint": "Send your request to the API Gateway at port 8000, or provide the internal X-Gateway-Secret header."
+  }
+}
+```
+
+### How It Works:
+1. All client traffic enters exclusively through **API Gateway (Port 8000)**.
+2. The Gateway securely dispatches requests to individual service ports (8001–8006) by signing requests with the internal `X-Gateway-Secret` header configured in `.env`.
+3. The `EnsureGatewayAccess` middleware on each service verifies this signature. Unsigned direct external requests are instantly blocked.
+
+### Service URLs in `.env`:
+```ini
+MICROSERVICE_GATEWAY_MODE=http
+GATEWAY_INTERNAL_SECRET=microservice_internal_secret_key_987456321
+
+GATEWAY_URL=http://127.0.0.1:8000
+IDENTITY_SERVICE_URL=http://127.0.0.1:8001
+ATTENDANCE_SERVICE_URL=http://127.0.0.1:8002
+PAYROLL_SERVICE_URL=http://127.0.0.1:8003
+ACCOUNTING_SERVICE_URL=http://127.0.0.1:8004
+INVENTORY_SERVICE_URL=http://127.0.0.1:8005
+NOTIFICATION_SERVICE_URL=http://127.0.0.1:8006
+```
 
 ---
 

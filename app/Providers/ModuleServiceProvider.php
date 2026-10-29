@@ -6,6 +6,7 @@ namespace App\Providers;
 
 use App\Gateway\Middleware\GatewayCorrelationIdMiddleware;
 use App\Shared\Controllers\TenantController;
+use App\Shared\Middleware\EnsureGatewayAccess;
 use App\Shared\Middleware\TenantResolutionMiddleware;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
@@ -55,13 +56,19 @@ class ModuleServiceProvider extends ServiceProvider
             return;
         }
 
-        $commonMiddleware = [
+        $publicGatewayMiddleware = [
             'api',
             GatewayCorrelationIdMiddleware::class,
             TenantResolutionMiddleware::class,
         ];
 
-        // Register routes for individual microservice modules with Tenant & Gateway middleware
+        // Modules require Gateway authorization (EnsureGatewayAccess)
+        $moduleMiddleware = [
+            ...$publicGatewayMiddleware,
+            EnsureGatewayAccess::class,
+        ];
+
+        // Register routes for individual microservice modules with Tenant, Gateway & Access middleware
         foreach ($this->modules as $module) {
             $routePath = $modulesPath.DIRECTORY_SEPARATOR.$module.DIRECTORY_SEPARATOR.'routes.php';
 
@@ -69,24 +76,24 @@ class ModuleServiceProvider extends ServiceProvider
                 $prefix = 'api/'.Str::kebab($module);
                 $as = Str::kebab($module).'.';
 
-                Route::middleware($commonMiddleware)
+                Route::middleware($moduleMiddleware)
                     ->prefix($prefix)
                     ->as($as)
                     ->group($routePath);
             }
         }
 
-        // Register API Gateway routes
+        // Register API Gateway routes (Public root entrypoint)
         $gatewayRoutePath = app_path('Gateway'.DIRECTORY_SEPARATOR.'routes.php');
         if (File::exists($gatewayRoutePath)) {
-            Route::middleware($commonMiddleware)
+            Route::middleware($publicGatewayMiddleware)
                 ->prefix('api/gateway')
                 ->as('gateway.')
                 ->group($gatewayRoutePath);
         }
 
-        // SaaS Tenant Management Routes (Landlord layer)
-        Route::middleware($commonMiddleware)
+        // SaaS Tenant Management Routes (Public landlord layer)
+        Route::middleware($publicGatewayMiddleware)
             ->prefix('api/tenants')
             ->as('tenants.')
             ->group(function (): void {
@@ -96,7 +103,7 @@ class ModuleServiceProvider extends ServiceProvider
             });
 
         // Global microservice discovery / health overview route
-        Route::middleware($commonMiddleware)
+        Route::middleware($publicGatewayMiddleware)
             ->prefix('api')
             ->get('/modules', function () {
                 return response()->json([
